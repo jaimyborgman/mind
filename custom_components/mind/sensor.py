@@ -16,7 +16,26 @@ SENSOR_TYPES = {
     'mileage': ['Mileage', LENGTH_KILOMETERS, 'mdi:counter'],
     'mileage_left': ['Mileage Left', LENGTH_KILOMETERS, 'mdi:fuel'],
     'fuel_left': ['Fuel Left', VOLUME_LITERS, 'mdi:fuel'],
-    'battery': ['Battery', 'V', 'mdi:car-battery']
+    'battery': ['Battery', 'V', 'mdi:car-battery'],
+
+    'vin': ['Vin', '', 'mdi:car-info'],
+    'registration_number': ['Registration Number', '', 'mdi:car-info'],
+    'brand': ['Brand', '', 'mdi:car-info'],
+    'model': ['Model', '', 'mdi:car-info'],
+    'edition': ['Edition', '', 'mdi:car-info'],
+    'production_year': ['Production Year', '', 'mdi:car-info'],
+    'engine_type': ['Engine Type', '', 'mdi:car-info'],
+    'engine_fuel_type': ['Engine Fuel Type', '', 'mdi:car-info'],
+    'odometer': ['Odometer', '', 'mdi:car-info'],
+    'remaining_days_until_maintenance': ['Remaining Days Until Maintenance', '', 'mdi:car-info'],
+    'remaining_days_until_service': ['Remaining Days Until Service', '', 'mdi:car-info'],
+    'model_year': ['Model Year', '', 'mdi:car-info'],
+    'maintenance_date': ['Maintenance Date', '', 'mdi:car-info'],
+    'service_date': ['Service Date', '', 'mdi:car-info'],
+    'apk_date': ['APK Date', '', 'mdi:car-info'],
+    'mil_warning_count': ['MIL Warning Count', '', 'mdi:car-info'],
+    'mil_error_count': ['MIL Error Count', '', 'mdi:car-info'],
+    'mil_count': ['MIL Count', '', 'mdi:car-info'],
 }
 
 
@@ -27,10 +46,8 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 
     devs = list()
     for vehicle in hass.data[DATA_MIND].vehicles():
-        devs.append(MindSensor(vehicle.license_plate, 'mileage', vehicle))
-        devs.append(MindSensor(vehicle.license_plate, 'mileage_left', vehicle))
-        devs.append(MindSensor(vehicle.license_plate, 'fuel_left', vehicle))
-        devs.append(MindSensor(vehicle.license_plate, 'battery', vehicle))
+        for type in SENSOR_TYPES:
+            devs.append(MindSensor(vehicle.license_plate, type, vehicle))
 
     add_devices(devs, True)
 
@@ -66,16 +83,59 @@ class MindSensor(Entity):
         """Return the unit of measurement."""
         return self._unit_of_measurement
 
+    @property
+    def _data(self):
+        return self._vehicle._mind_api._vehicle(self._vehicle.vehicleId)
+
     def update(self):
         """Retrieve sensor data from the car."""
+
         if self._type == 'mileage':
-            self._state = self._vehicle.mileage/1000
+            self._state = self._vehicle.mileage / 1000
         elif self._type == 'mileage_left':
             self._state = self._vehicle.mileage_left
         elif self._type == 'fuel_left':
             self._state = self._vehicle.fuellevel
         elif self._type == 'battery':
-            self._state = self._vehicle.batteryVoltage
+            self._state = round(self._vehicle.batteryVoltage, 2)
+
+        elif self._type == 'vin':
+            self._state = self._data.get('vin')
+        elif self._type == 'registration_number':
+            self._state = self._data.get('registrationNumber')
+        elif self._type == 'brand':
+            self._state = self._data.get('brand')
+        elif self._type == 'model':
+            self._state = self._data.get('model')
+        elif self._type == 'edition':
+            self._state = self._data.get('edition')
+        elif self._type == 'production_year':
+            self._state = self._data.get('productionYear')
+        elif self._type == 'engine_type':
+            self._state = self._data.get('engineType')
+        elif self._type == 'engine_fuel_type':
+            self._state = self._data.get('engineFuelType')
+        elif self._type == 'odometer':
+            self._state = self._data.get('odometer')
+        elif self._type == 'remaining_days_until_maintenance':
+            self._state = self._data.get('remainingDaysUntilMaintenance')
+        elif self._type == 'remaining_days_until_service':
+            self._state = self._data.get('remainingDaysUntilService')
+        elif self._type == 'model_year':
+            self._state = self._data.get('modelYear')
+        elif self._type == 'maintenance_date':
+            self._state = self._data.get('maintenanceDate')
+        elif self._type == 'service_date':
+            self._state = self._data.get('serviceDate')
+        elif self._type == 'apk_date':
+            self._state = self._data.get('apkDate')
+        elif self._type == 'mil_warning_count':
+            self._state = self._data.get('milWarningCount')
+        elif self._type == 'mil_error_count':
+            self._state = self._data.get('milErrorCount')
+        elif self._type == 'mil_count':
+            self._state = self._data.get('milCount')
+
         else:
             self._state = None
             _LOGGER.warning("Could not retrieve state from %s", self.name)
